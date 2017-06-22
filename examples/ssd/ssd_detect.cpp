@@ -335,7 +335,8 @@ int main(int argc, char** argv)
 	  p1.y = ymin;
 	  p2.x = xmax;
 	  p2.y = ymax;
-	  cvRectangle(pImg, p1 ,p2, CV_RGB(0, 255, 0), 2); //绿色画框
+	  cv::rectangle(matImage,p1,p2,Scalar(0,255,0),1,1,0);
+	 // cvRectangle(pImg, p1 ,p2, CV_RGB(0, 255, 0), 2); //绿色画框
         }
 	cv::imwrite(lsOut, cv::Mat(pImg));//save the reult to another file
       }
