@@ -14,6 +14,7 @@
 //
 #include <caffe/caffe.hpp>
 #ifdef USE_OPENCV
+#include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -189,7 +190,8 @@ void Detector::WrapInputLayer(std::vector<cv::Mat>* input_channels) {
 }
 
 void Detector::Preprocess(const cv::Mat& img,
-                            std::vector<cv::Mat>* input_channels) {
+                            std::vector<cv::Mat>* input_channels) 
+{
   /* Convert the input image to the input image format of the network. */
   cv::Mat sample;
   if (img.channels() == 3 && num_channels_ == 1)
@@ -238,10 +240,11 @@ DEFINE_string(file_type, "image",
     "The file type in the list_file. Currently support image and video.");
 DEFINE_string(out_file, "",
     "If provided, store the detection results in the out_file.");
-DEFINE_double(confidence_threshold, 0.01,
+DEFINE_double(confidence_threshold, 0.1,
     "Only store detections with score higher than the threshold.");
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) 
+{
   ::google::InitGoogleLogging(argv[0]);
   // Print output to stderr (while still logging)
   FLAGS_alsologtostderr = 1;
@@ -255,7 +258,8 @@ int main(int argc, char** argv) {
         "    ssd_detect [FLAGS] model_file weights_file list_file\n");
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  if (argc < 4) {
+  if (argc < 4) 
+  {
     gflags::ShowUsageWithFlagsRestrict(argv[0], "examples/ssd/ssd_detect");
     return 1;
   }
@@ -274,9 +278,11 @@ int main(int argc, char** argv) {
   // Set the output mode.
   std::streambuf* buf = std::cout.rdbuf();
   std::ofstream outfile;
-  if (!out_file.empty()) {
+  if (!out_file.empty()) 
+  {
     outfile.open(out_file.c_str());
-    if (outfile.good()) {
+    if (outfile.good()) 
+    {
       buf = outfile.rdbuf();
     }
   }
@@ -285,27 +291,53 @@ int main(int argc, char** argv) {
   // Process image one by one.
   std::ifstream infile(argv[3]);
   std::string file;
-  while (infile >> file) {
-    if (file_type == "image") {
+  while (infile >> file) 
+  {
+    if (file_type == "image") 
+    {
+      string lsOut("out/");
+      lsOut += file;
+      LOG(INFO)<<lsOut;
+
       cv::Mat img = cv::imread(file, -1);
       CHECK(!img.empty()) << "Unable to decode image " << file;
       std::vector<vector<float> > detections = detector.Detect(img);
 
       /* Print the detection results. */
-      for (int i = 0; i < detections.size(); ++i) {
+      for (int i = 0; i < detections.size(); ++i)
+      {
         const vector<float>& d = detections[i];
         // Detection format: [image_id, label, score, xmin, ymin, xmax, ymax].
         CHECK_EQ(d.size(), 7);
         const float score = d[2];
-        if (score >= confidence_threshold) {
+
+        IplImage tmp_image, *pImg = NULL;
+	tmp_image= IplImage(img);
+	pImg= cvCloneImage(&tmp_image);
+        
+	if (score >= confidence_threshold) 
+	{
           out << file << " ";
           out << static_cast<int>(d[1]) << " ";
           out << score << " ";
-          out << static_cast<int>(d[3] * img.cols) << " ";
-          out << static_cast<int>(d[4] * img.rows) << " ";
-          out << static_cast<int>(d[5] * img.cols) << " ";
-          out << static_cast<int>(d[6] * img.rows) << std::endl;
+          int xmin =  static_cast<int>(d[3] * img.cols);
+          int ymin =  static_cast<int>(d[4] * img.rows);
+          int xmax =  static_cast<int>(d[5] * img.cols);
+          int ymax =  static_cast<int>(d[6] * img.rows);
+          out << xmin << " ";
+          out << ymin << " ";
+          out << xmax << " ";
+          out << ymax << std::endl;
+
+	  //draw rectangle
+	  CvPoint p1, p2; 
+	  p1.x = xmin;
+	  p1.y = ymin;
+	  p2.x = xmax;
+	  p2.y = ymax;
+	  cvRectangle(pImg, p1 ,p2, CV_RGB(0, 255, 0), 2); //绿色画框
         }
+	cv::imwrite(lsOut, cv::Mat(pImg));//save the reult to another file
       }
     } else if (file_type == "video") {
       cv::VideoCapture cap(file);
