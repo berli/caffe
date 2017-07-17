@@ -30,7 +30,8 @@
 #ifdef USE_OPENCV
 using namespace caffe;  // NOLINT(build/namespaces)
 
-class Detector {
+class Detector 
+{
  public:
   Detector(const string& model_file,
            const string& weights_file,
@@ -57,7 +58,8 @@ class Detector {
 Detector::Detector(const string& model_file,
                    const string& weights_file,
                    const string& mean_file,
-                   const string& mean_value) {
+                   const string& mean_value) 
+		  {
 #ifdef CPU_ONLY
   Caffe::set_mode(Caffe::CPU);
 #else
@@ -81,7 +83,8 @@ Detector::Detector(const string& model_file,
   SetMean(mean_file, mean_value);
 }
 
-std::vector<vector<float> > Detector::Detect(const cv::Mat& img) {
+std::vector<vector<float> > Detector::Detect(const cv::Mat& img) 
+{
   Blob<float>* input_layer = net_->input_blobs()[0];
   input_layer->Reshape(1, num_channels_,
                        input_geometry_.height, input_geometry_.width);
@@ -100,8 +103,10 @@ std::vector<vector<float> > Detector::Detect(const cv::Mat& img) {
   const float* result = result_blob->cpu_data();
   const int num_det = result_blob->height();
   vector<vector<float> > detections;
-  for (int k = 0; k < num_det; ++k) {
-    if (result[0] == -1) {
+  for (int k = 0; k < num_det; ++k) 
+  {
+    if (result[0] == -1) 
+    {
       // Skip invalid detection.
       result += 7;
       continue;
@@ -114,9 +119,11 @@ std::vector<vector<float> > Detector::Detect(const cv::Mat& img) {
 }
 
 /* Load the mean file in binaryproto format. */
-void Detector::SetMean(const string& mean_file, const string& mean_value) {
+void Detector::SetMean(const string& mean_file, const string& mean_value) 
+{
   cv::Scalar channel_mean;
-  if (!mean_file.empty()) {
+  if (!mean_file.empty()) 
+  {
     CHECK(mean_value.empty()) <<
       "Cannot specify mean_file and mean_value at the same time";
     BlobProto blob_proto;
@@ -131,7 +138,8 @@ void Detector::SetMean(const string& mean_file, const string& mean_value) {
     /* The format of the mean file is planar 32-bit float BGR or grayscale. */
     std::vector<cv::Mat> channels;
     float* data = mean_blob.mutable_cpu_data();
-    for (int i = 0; i < num_channels_; ++i) {
+    for (int i = 0; i < num_channels_; ++i) 
+    {
       /* Extract an individual channel. */
       cv::Mat channel(mean_blob.height(), mean_blob.width(), CV_32FC1, data);
       channels.push_back(channel);
@@ -147,7 +155,8 @@ void Detector::SetMean(const string& mean_file, const string& mean_value) {
     channel_mean = cv::mean(mean);
     mean_ = cv::Mat(input_geometry_, mean.type(), channel_mean);
   }
-  if (!mean_value.empty()) {
+  if (!mean_value.empty()) 
+  {
     CHECK(mean_file.empty()) <<
       "Cannot specify mean_file and mean_value at the same time";
     stringstream ss(mean_value);
